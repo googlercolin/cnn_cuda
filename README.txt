@@ -1,4 +1,4 @@
-This lab uses the CNN algorithm described in the report.
+This lab uses the CNN algorithm described in the instructions.
 
 The input files consist of a CNN file describing the CNN and an input file containing a number of input matrices.
 The output files contain the output vectors for each input matrix.
