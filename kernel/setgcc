@@ -1,2 +1,2 @@
 #!/bin/bash
-nvcc --compiler-bindir /usr/bin/gcc-6 -ptx nbody.cu
+nvcc --compiler-bindir /usr/bin/gcc-7 -ptx nbody.cu

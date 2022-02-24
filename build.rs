@@ -1,7 +1,7 @@
 use std::process::Command;
 
 // Depends on NVCC version on the system, which indicates maximum supported GCC version
-const MAX_GCC_VERSION: u32 = 6;  // was 8
+const MAX_GCC_VERSION: u32 = 7;  // was 8
 
 fn main() {
     let filename = "kernel/kernel.cu";
