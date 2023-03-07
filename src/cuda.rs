@@ -84,15 +84,20 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        let weights = self.output_layer.unwrap();
+        if let DeviceBox(x) = self.output_layer {
+            println!(x);
+        }
 
-        output_layer(&conv_output, weights, &mut output);
+        // let weights = &self.output_layer;
+        //
+        // output_layer(&conv_output, weights, &mut output);
 
+        output = OutputVec([0.0; OUT_LAYER_SIZE]);
         Ok(output)
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: &OutputLayer, output: &mut OutputVec) {
+fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
     // Go thru each output neuron
     for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
