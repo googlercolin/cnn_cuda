@@ -46,15 +46,15 @@ impl CudaContext {
         let mut output = OutputVec([0.0; OUT_LAYER_SIZE]);
 
         // Create buffers for data
-        let mut input_buf = DeviceBuffer::from_slice(&input)?;
+        let mut input_buf = DeviceBuffer::from_slice(input)?;
         // let mut conv_layer_buf = DeviceBuffer::from_slice(&self.conv_layer)?;
-        let mut conv_output_buf = DeviceBuffer::from_slice(&conv_output?);
-        let mut output_buf = DeviceBuffer::from_slice(&output)?;
+        let mut conv_output_buf = DeviceBuffer::from_slice(&conv_output.as_slice())?;
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
             let module = &self.module;
-            let result = launch!(module.convolution_layer<<<10, (20, 20), 0, &self.stream>>>(
+            let stream = &self.stream;
+            let result = launch!(module.convolution_layer<<<10, (20, 20), 0, stream>>>(
                 input_buf.as_device_ptr(),
                 self.conv_layer.as_device_ptr(),
                 conv_output_buf.as_device_ptr()
@@ -71,7 +71,8 @@ impl CudaContext {
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
             let module = &self.module;
-            let result = launch!(module.relu_layer<<<10, (20, 20), 0, &self.stream>>>(
+            let stream = &self.stream;
+            let result = launch!(module.relu_layer<<<10, (20, 20), 0, stream>>>(
                 conv_output_buf.as_device_ptr()
             ));
             result?;
@@ -83,7 +84,7 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_buf.copy_to(&mut conv_output)?;
 
-        let weights = self.output_layer.clone();
+        let weights = self.output_layer.unwrap().clone();
 
         output_layer(&conv_output, weights, &mut output);
 
@@ -91,7 +92,7 @@ impl CudaContext {
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: DeviceBox<OutputLayer>, output: &mut OutputVec) {
+fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
     // Go thru each output neuron
     for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
