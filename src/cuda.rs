@@ -66,7 +66,7 @@ impl CudaContext {
         self.stream.synchronize()?;
 
         // Copy the results back to host memory
-        conv_output_buf.copy_to(&mut conv_output)?;
+        conv_output_box.copy_to(&mut conv_output)?;
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
@@ -84,7 +84,7 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        let weights = self.output_layer.unwrap().clone();
+        let weights = self.output_layer.unwrap();
 
         output_layer(&conv_output, weights, &mut output);
 
@@ -92,7 +92,7 @@ impl CudaContext {
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
+fn output_layer(input: &ConvOutput, weights: &OutputLayer, output: &mut OutputVec) {
     // Go thru each output neuron
     for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
