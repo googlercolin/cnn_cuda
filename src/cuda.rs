@@ -22,15 +22,23 @@ pub struct CudaContext {
 impl CudaContext {
     pub fn init(cnn: &Cnn) -> Result<Self, Box<dyn Error>> {
         rustacuda::init(CudaFlags::empty())?;
-        Self.conv_layer = DeviceBox::new(&cnn.conv_layer)?;
-        Self.output_layer = DeviceBox::new(&cnn.output_layer).unwrap();
-        let device = Device::get_device(0)?;
-        Self._context = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
         let ptx = CString::new(include_str!("../kernel/kernel.ptx"))?;
-        Self.module = Module::load_from_string(&ptx)?;
-        Self.stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
-
-        Ok(Self)
+        let device = Device::get_device(0)?;
+        let cuda_ctx = CudaContext {
+            conv_layer: DeviceBox::new(&cnn.conv_layer)?,
+            output_layer: DeviceBox::new(&cnn.output_layer)?,
+            _context: Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?,
+            module: Module::load_from_string(&ptx)?,
+            stream: Stream::new(StreamFlags::NON_BLOCKING, None)?,
+        };
+        // Self.conv_layer = DeviceBox::new(&cnn.conv_layer)?;
+        // Self.output_layer =
+        //
+        // Self._context = ;
+        //
+        // Self.module = ;
+        // Self.stream = ;
+        Ok(cuda_ctx)
     }
 
     pub fn compute(&mut self, input: &InputMatrix) -> Result<OutputVec, Box<dyn Error>> {
@@ -39,15 +47,16 @@ impl CudaContext {
 
         // Create buffers for data
         let mut input_buf = DeviceBuffer::from_slice(&input)?;
-        let mut conv_layer_buf = DeviceBuffer::from_slice(&self.conv_layer)?;
-        let mut conv_output_buf = DeviceBuffer::from_slice(&conv_output?;
+        // let mut conv_layer_buf = DeviceBuffer::from_slice(&self.conv_layer)?;
+        let mut conv_output_buf = DeviceBuffer::from_slice(&conv_output?);
         let mut output_buf = DeviceBuffer::from_slice(&output)?;
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
-            let result = launch!(&self.module.convolution_layer<<<10, (20, 20), 0, &self.stream>>>(
+            let module = &self.module;
+            let result = launch!(module.convolution_layer<<<10, (20, 20), 0, &self.stream>>>(
                 input_buf.as_device_ptr(),
-                conv_layer_buf.as_device_ptr(),
+                self.conv_layer.as_device_ptr(),
                 conv_output_buf.as_device_ptr()
             ));
             result?;
@@ -61,7 +70,8 @@ impl CudaContext {
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
-            let result = launch!(&self.module.relu_layer<<<10, (20, 20), 0, &self.stream>>>(
+            let module = &self.module;
+            let result = launch!(module.relu_layer<<<10, (20, 20), 0, &self.stream>>>(
                 conv_output_buf.as_device_ptr()
             ));
             result?;
