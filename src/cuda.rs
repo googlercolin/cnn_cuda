@@ -46,18 +46,18 @@ impl CudaContext {
         let mut output = OutputVec([0.0; OUT_LAYER_SIZE]);
 
         // Create buffers for data
-        let mut input_buf = DeviceBuffer::from_slice(input)?;
+        let mut input_box = DeviceBox::new(input)?;
         // let mut conv_layer_buf = DeviceBuffer::from_slice(&self.conv_layer)?;
-        let mut conv_output_buf = DeviceBuffer::from_slice(&conv_output.as_slice())?;
+        let mut conv_output_box = DeviceBox::new(&conv_output)?;
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
             let module = &self.module;
             let stream = &self.stream;
             let result = launch!(module.convolution_layer<<<10, (20, 20), 0, stream>>>(
-                input_buf.as_device_ptr(),
+                input_box.as_device_ptr(),
                 self.conv_layer.as_device_ptr(),
-                conv_output_buf.as_device_ptr()
+                conv_output_box.as_device_ptr()
             ));
             result?;
         }
@@ -73,7 +73,7 @@ impl CudaContext {
             let module = &self.module;
             let stream = &self.stream;
             let result = launch!(module.relu_layer<<<10, (20, 20), 0, stream>>>(
-                conv_output_buf.as_device_ptr()
+                conv_output_box.as_device_ptr()
             ));
             result?;
         }
@@ -82,7 +82,7 @@ impl CudaContext {
         self.stream.synchronize()?;
 
         // Copy the results back to host memory
-        conv_output_buf.copy_to(&mut conv_output)?;
+        conv_output_box.copy_to(&mut conv_output)?;
 
         let weights = self.output_layer.unwrap().clone();
 
