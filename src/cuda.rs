@@ -44,6 +44,7 @@ impl CudaContext {
     pub fn compute(&mut self, input: &InputMatrix) -> Result<OutputVec, Box<dyn Error>> {
         let mut conv_output = ConvOutput([[[0.0; CONV_OUT_DIM]; CONV_OUT_DIM]; CONV_LAYER_SIZE]);
         let mut output = OutputVec([0.0; OUT_LAYER_SIZE]);
+        let mut weights = OutputLayer([[0.0; OUT_NEURON_DIM]; OUT_LAYER_SIZE]);
 
         // Create buffers for data
         let mut input_box = DeviceBox::new(input)?;
@@ -84,15 +85,18 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        if let DeviceBox(x) = self.output_layer {
-            println!(x);
+        // if let DeviceBox(x) = self.output_layer {
+        //     println!(x);
+        // }
+
+        fn unbox<T>(value: &DeviceBox<T>) -> T {
+            **value
         }
 
-        // let weights = &self.output_layer;
-        //
-        // output_layer(&conv_output, weights, &mut output);
+        unbox(&self.output_layer).copy_to(weights);
 
-        output = OutputVec([0.0; OUT_LAYER_SIZE]);
+        output_layer(&conv_output, weights, &mut output);
+
         Ok(output)
     }
 }

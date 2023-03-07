@@ -23,6 +23,7 @@ pub struct ConvLayer(pub [[[f64; FILTER_DIM]; FILTER_DIM]; CONV_LAYER_SIZE]);
 // Each convolution filter generates a 20x20 output filter matrix, and there are 10 in total.
 pub struct ConvOutput(pub [[[f64; CONV_OUT_DIM]; CONV_OUT_DIM]; CONV_LAYER_SIZE]);
 #[repr(transparent)]
+#[derive(Clone, Copy)]
 pub struct OutputLayer(pub [[f64; OUT_NEURON_DIM]; OUT_LAYER_SIZE]);
 #[repr(transparent)]
 // Each of the 10 output layer neurons generate 1 number
