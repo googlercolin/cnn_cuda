@@ -60,26 +60,26 @@ impl CudaContext {
         }
 
         // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-        // self.stream.synchronize()?;
-
-        // Copy the results back to host memory
-        conv_output_box.copy_to(&mut conv_output)?;
-
-        unsafe {
-            // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
-            let module = &self.module;
-            let stream = &self.stream;
-            let result = launch!(module.relu_layer<<<10, (20, 20), 0, stream>>>(
-                conv_output_box.as_device_ptr()
-            ));
-            result?;
-        }
-
-        // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
         self.stream.synchronize()?;
 
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
+
+        // unsafe {
+        //     // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
+        //     let module = &self.module;
+        //     let stream = &self.stream;
+        //     let result = launch!(module.relu_layer<<<10, (20, 20), 0, stream>>>(
+        //         conv_output_box.as_device_ptr()
+        //     ));
+        //     result?;
+        // }
+        //
+        // // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
+        // self.stream.synchronize()?;
+        //
+        // // Copy the results back to host memory
+        // conv_output_box.copy_to(&mut conv_output)?;
 
         // if let DeviceBox(x) = self.output_layer {
         //     println!("{}", x);

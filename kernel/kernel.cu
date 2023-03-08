@@ -32,15 +32,19 @@ extern "C" __global__ void convolution_layer(double input[100][100],
     }
 
     outputs[neuron][x][y] = sum;
-}
 
-extern "C" __global__ void relu_layer(double conv_out[10][20][20]) {
-    int neuron = blockIdx.x;
-    int x = threadIdx.x;
-    int y = threadIdx.y;
-
-    if (conv_out[neuron][x][y] < 0.0) {
-        conv_out[neuron][x][y] = 0.0;
+    if (outputs[neuron][x][y] < 0.0) {
+        outputs[neuron][x][y] = 0.0;
     }
-
 }
+
+//extern "C" __global__ void relu_layer(double conv_out[10][20][20]) {
+//    int neuron = blockIdx.x;
+//    int x = threadIdx.x;
+//    int y = threadIdx.y;
+//
+//    if (conv_out[neuron][x][y] < 0.0) {
+//        conv_out[neuron][x][y] = 0.0;
+//    }
+//
+//}
