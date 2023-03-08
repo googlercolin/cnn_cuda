@@ -26,20 +26,14 @@ impl CudaContext {
         rustacuda::init(CudaFlags::empty())?;
         let ptx = CString::new(include_str!("../kernel/kernel.ptx"))?;
         let device = Device::get_device(0)?;
+        let _ctx = Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
         let cuda_ctx = CudaContext {
             conv_layer: DeviceBox::new(&cnn.conv_layer)?,
             output_layer: DeviceBox::new(&cnn.output_layer)?,
             module: Module::load_from_string(&ptx)?,
             stream: Stream::new(StreamFlags::NON_BLOCKING, None)?,
-            _context: Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?,
+            _context: _ctx,
         };
-        // Self.conv_layer = DeviceBox::new(&cnn.conv_layer)?;
-        // Self.output_layer =
-        //
-        // Self._context = ;
-        //
-        // Self.module = ;
-        // Self.stream = ;
         Ok(cuda_ctx)
     }
 
