@@ -60,7 +60,7 @@ impl CudaContext {
         }
 
         // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-        self.stream.synchronize()?;
+        // self.stream.synchronize()?;
 
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
