@@ -89,9 +89,9 @@ impl CudaContext {
             println!("{}", x);
         }
 
-        let weights = *self.output_layer;
-
-        output_layer(&conv_output, weights, &mut output);
+        // let weights = *self.output_layer;
+        //
+        // output_layer(&conv_output, weights, &mut output);
 
         Ok(output)
     }
