@@ -1,5 +1,6 @@
 // This is the skeleton for the CUDA implementation
 
+use std::convert::TryInto;
 use crate::cnn::*;
 use rustacuda::function::BlockSize;
 use rustacuda::launch;
@@ -85,13 +86,13 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        if let DeviceBox(x) = self.output_layer {
-            println!("{}", x);
-        }
+        // if let DeviceBox(x) = self.output_layer {
+        //     println!("{}", x);
+        // }
 
-        // let weights = *self.output_layer;
-        //
-        // output_layer(&conv_output, weights, &mut output);
+        let weights: OutputLayer = self.output_layer.try_into(OutputLayer).unwrap();
+
+        output_layer(&conv_output, weights, &mut output);
 
         Ok(output)
     }
