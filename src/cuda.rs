@@ -8,6 +8,7 @@ use rustacuda::memory::DeviceBox;
 use rustacuda::prelude::*;
 use std::error::Error;
 use std::ffi::CString;
+use std::ops::Deref;
 
 // Fields need to be ordered this way so the DeviceBoxes are
 // dropped before the Context. Otherwise the drop will panic.
@@ -90,17 +91,19 @@ impl CudaContext {
         //     println!("{}", x);
         // }
 
+        let weights = *self.output_layer;
+
         // let weights: OutputLayer = self.output_layer.try_into().unwrap();
 
-        output_layer(&conv_output, &self.output_layer, &mut output);
+        output_layer(&conv_output, weights, &mut output);
 
         Ok(output)
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: &DeviceBox<OutputLayer>, output: &mut OutputVec) {
+fn output_layer(input: &ConvOutput, weights: [f64; OUT_LAYER_SIZE], output: &mut OutputVec) {
     // Go thru each output neuron
-    for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
+    for (weight, out) in weights.iter().zip(output.0.iter_mut()) {
         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
         // the weight vector to produce a single value
         let flattened = input.0.iter().flat_map(|n| n.iter().flat_map(|r| r.iter()));
