@@ -29,9 +29,9 @@ impl CudaContext {
         let cuda_ctx = CudaContext {
             conv_layer: DeviceBox::new(&cnn.conv_layer)?,
             output_layer: DeviceBox::new(&cnn.output_layer)?,
-            _context: Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?,
             module: Module::load_from_string(&ptx)?,
             stream: Stream::new(StreamFlags::NON_BLOCKING, None)?,
+            _context: Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?,
         };
         // Self.conv_layer = DeviceBox::new(&cnn.conv_layer)?;
         // Self.output_layer =
