@@ -85,9 +85,9 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        // if let DeviceBox(x) = self.output_layer {
-        //     println!(x);
-        // }
+        if let DeviceBox(x) = self.output_layer {
+            println!("{?}", x);
+        }
 
         let weights = *self.output_layer;
 
