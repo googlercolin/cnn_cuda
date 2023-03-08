@@ -46,7 +46,7 @@ impl CudaContext {
     pub fn compute(&mut self, input: &InputMatrix) -> Result<OutputVec, Box<dyn Error>> {
         let mut conv_output = ConvOutput([[[0.0; CONV_OUT_DIM]; CONV_OUT_DIM]; CONV_LAYER_SIZE]);
         let mut output = OutputVec([0.0; OUT_LAYER_SIZE]);
-        // let mut weights = OutputLayer([[0.0; OUT_NEURON_DIM]; OUT_LAYER_SIZE]);
+        let mut weights = OutputLayer([[0.0; OUT_NEURON_DIM]; OUT_LAYER_SIZE]);
 
         // Create buffers for data
         let mut input_box = DeviceBox::new(input)?;
@@ -91,7 +91,7 @@ impl CudaContext {
         //     println!("{}", x);
         // }
 
-        let weights = *self.output_layer;
+        self.output_layer.copy_to(&mut weights)?;
 
         // let weights: OutputLayer = self.output_layer.try_into().unwrap();
 
@@ -101,9 +101,9 @@ impl CudaContext {
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: [f64; OUT_LAYER_SIZE], output: &mut OutputVec) {
+fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
     // Go thru each output neuron
-    for (weight, out) in weights.iter().zip(output.0.iter_mut()) {
+    for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
         // the weight vector to produce a single value
         let flattened = input.0.iter().flat_map(|n| n.iter().flat_map(|r| r.iter()));
