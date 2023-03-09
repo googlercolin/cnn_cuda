@@ -7,7 +7,6 @@ use rustacuda::memory::DeviceBox;
 use rustacuda::prelude::*;
 use std::error::Error;
 use std::ffi::CString;
-use std::ops::Deref;
 
 // Fields need to be ordered this way so the DeviceBoxes are
 // dropped before the Context. Otherwise the drop will panic.
