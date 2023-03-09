@@ -2,8 +2,7 @@
 
 // You do not need to modify this file.
 
-use std::ops::Deref;
-use rustacuda::memory::{DeviceBox, DeviceCopy};
+use rustacuda::memory::DeviceCopy;
 
 // The CNN consists of 100x100 input matrix, a convolution layer of 10 5x5 filter matrices, a RELU
 // layer, and an output layer of 10 4000x1 weight vectors. CNN output is a 10x1 vector.
@@ -43,10 +42,3 @@ unsafe impl DeviceCopy for ConvLayer {}
 unsafe impl DeviceCopy for ConvOutput {}
 unsafe impl DeviceCopy for OutputLayer {}
 unsafe impl DeviceCopy for OutputVec {}
-impl Deref for OutputVec {
-    type Target = [f64; OUT_LAYER_SIZE];
-
-    fn deref(&self) -> &Self::Target {
-        &self
-    }
-}

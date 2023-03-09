@@ -1,8 +1,7 @@
 // This is the skeleton for the CUDA implementation
 
-use std::convert::TryInto;
 use crate::cnn::*;
-use rustacuda::function::BlockSize;
+// use rustacuda::function::BlockSize;
 use rustacuda::launch;
 use rustacuda::memory::DeviceBox;
 use rustacuda::prelude::*;
@@ -44,14 +43,13 @@ impl CudaContext {
 
         // Create buffers for data
         let mut input_box = DeviceBox::new(input)?;
-        // let mut conv_layer_buf = DeviceBuffer::from_slice(&self.conv_layer)?;
         let mut conv_output_box = DeviceBox::new(&conv_output)?;
 
         unsafe {
             // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
             let module = &self.module;
             let stream = &self.stream;
-            let result = launch!(module.convolution_layer<<<10, (20, 20), 0, stream>>>(
+            let result = launch!(module.convolution_relu_layer<<<10, (20, 20), 0, stream>>>(
                 input_box.as_device_ptr(),
                 self.conv_layer.as_device_ptr(),
                 conv_output_box.as_device_ptr()
@@ -65,29 +63,7 @@ impl CudaContext {
         // Copy the results back to host memory
         conv_output_box.copy_to(&mut conv_output)?;
 
-        // unsafe {
-        //     // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
-        //     let module = &self.module;
-        //     let stream = &self.stream;
-        //     let result = launch!(module.relu_layer<<<10, (20, 20), 0, stream>>>(
-        //         conv_output_box.as_device_ptr()
-        //     ));
-        //     result?;
-        // }
-        //
-        // // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-        // self.stream.synchronize()?;
-        //
-        // // Copy the results back to host memory
-        // conv_output_box.copy_to(&mut conv_output)?;
-
-        // if let DeviceBox(x) = self.output_layer {
-        //     println!("{}", x);
-        // }
-
         self.output_layer.copy_to(&mut weights)?;
-
-        // let weights: OutputLayer = self.output_layer.try_into().unwrap();
 
         output_layer(&conv_output, weights, &mut output);
 
