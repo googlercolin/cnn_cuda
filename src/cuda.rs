@@ -45,7 +45,7 @@ impl CudaContext {
         let mut conv_output_box = DeviceBox::new(&conv_output)?;
 
         unsafe {
-            // Launch the kernel with one block of one thread, no dynamic shared memory on `stream`.
+            // Launch the kernel with 10 blocks of 20*20 threads, no dynamic shared memory on `stream`.
             let module = &self.module;
             let stream = &self.stream;
             let result = launch!(module.convolution_relu_layer<<<10, (20, 20), 0, stream>>>(
