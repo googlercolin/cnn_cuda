@@ -58,12 +58,12 @@ impl CudaContext {
         }
 
         // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-        self.stream.synchronize()?;
-
-        // Copy the results back to host memory
-        conv_output_box.copy_to(&mut conv_output)?;
-
-        self.output_layer.copy_to(&mut weights)?;
+        // self.stream.synchronize()?;
+        //
+        // // Copy the results back to host memory
+        // conv_output_box.copy_to(&mut conv_output)?;
+        //
+        // self.output_layer.copy_to(&mut weights)?;
 
         // output_layer(&conv_output, weights, &mut output);
 
@@ -73,7 +73,7 @@ impl CudaContext {
             let stream = &self.stream;
             let result = launch!(module.output_layer<<<10, 1, 0, stream>>>(
                 conv_output_box.as_device_ptr(),
-                self.conv_layer.as_device_ptr(),
+                self.output_layer.as_device_ptr(),
                 output_box.as_device_ptr()
             ));
             result?;
@@ -89,13 +89,13 @@ impl CudaContext {
     }
 }
 
-fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
-    // Go thru each output neuron
-    for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
-        // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
-        // the weight vector to produce a single value
-        let flattened = input.0.iter().flat_map(|n| n.iter().flat_map(|r| r.iter()));
-        let prod: f64 = flattened.zip(weight.iter()).map(|(a, b)| a * b).sum();
-        *out = prod;
-    }
-}
+// fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
+//     // Go thru each output neuron
+//     for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
+//         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
+//         // the weight vector to produce a single value
+//         let flattened = input.0.iter().flat_map(|n| n.iter().flat_map(|r| r.iter()));
+//         let prod: f64 = flattened.zip(weight.iter()).map(|(a, b)| a * b).sum();
+//         *out = prod;
+//     }
+// }
