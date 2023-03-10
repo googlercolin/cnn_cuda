@@ -2,7 +2,7 @@
 
 # Summary
 To improve the performance of the original Convolutional Neural Network (CNN) which was running on the 
-CPU, we utilized CUDA to invoke a kernel on the GPU. This allows us to parallelize the convolution and ReLU 
+CPU, we utilized CUDA to invoke a kernel on the GPU. This allows us to parallelize the convolution, ReLU, and output 
 operations. The kernel was written is CUDA C++ in `kernel.cu` and the host code is written in `cuda.rs`.
 
 # Tech details
@@ -17,12 +17,11 @@ to the GPU with 10 blocks of (20x20) threads, no dynamic shared memory on `strea
 10 neurons giving (20x20) output after convolution is performed. The launch has to be done in an unsafe 
 block because the launch macro is unsafe. Each buffer is converted using the as_device_ptr() 
 so that the contents of the device buffer are provided. This kernel only performs the convolution and 
-ReLU operations in parallel. Since kernel launches are asynchronous, we wait for the kernels to finish 
-executing using `self.stream.synchronize()?;`. 
+ReLU operations in parallel. 
 
 For the GPU kernel, `kernel.cu`, we let the block index (`blockIdx.x`) define the neuron number, and the
 thread indices (`threadIdx.x`, `threadIdx.y`) define the (x, y) coordinate of the output convolution 
-matrix. To operate on the (100\*100) input matrix, we use (x * 5, y * 5) to define the first pixel of the 
+matrix. To operate on the (100x100) input matrix, we use (x * 5, y * 5) to define the first pixel of the 
 section to start computing the dot product between the input and the filter. We then loop through each
 pixel in each (5x5) section of input and multiply it with the corresponding pixel in the filter. The sum of 
 all these multiplications form the dot product. This will result in a (20x20) output
@@ -30,8 +29,11 @@ matrix of products. Thereafter, the ReLU of each value in output of the convolut
 to set any negative values to 0. 
 
 Following the kernel execution, we copy the `conv_output_box` results back to host memory (`conv_output`). 
-Lastly, for the Output layer, we perform the flattening and dot product between the (4000x1) vector 
-and the weights, using the CPU. This is done using the same `output_layer` function found in `cpu.rs`.
+Lastly, for the Output layer, we now launch the kernel to the GPU with 10 blocks, no dynamic shared memory on `stream`,
+in a similar fashion as above. Each block index (`blockIdx.x`) corresponds to the 10 sets of weights we use 
+to perform the dot product with the `conv_output`. The sum of the 4000 multiplications of each set of weights
+and the `conv_output` form the dot product for one of the ten elements in the `output` vector.
+Since kernel launches are asynchronous, we wait for the kernels to finish executing using `self.stream.synchronize()?;`.
 
 Note: the build.rs file will be run automatically at build time to compile the kernel.cu file into a 
 kernel.ptx file, which gets downloaded to the GPU.
@@ -51,4 +53,6 @@ convolution for each element in the input and filter, and ReLU for each element 
 sequentially, the CUDA-optimized CNN allocates each filter / neuron to a block in the GPU, and assigns
 (20x20) threads to each block. This allows for one element in each (5x5) section of the input to be 
 computed every cycle for the convolution layer. As for the ReLU layer, all the elements in the `conv_output`
-can be operated on at once. In essence, we use Single Instruction Multiple Thread to improve the bandwidth.
+can be operated on at once. Lastly, for the Output layer, we are able to perform 10 dot products of the 10 flattened
+weight vectors with all the elements in the `conv_output` simultaneously using the 10 threads, 
+instead of performing them sequentially. In essence, we use Single Instruction Multiple Thread to improve the bandwidth.
