@@ -27,3 +27,21 @@ extern "C" __global__ void convolution_relu_layer(double input[100][100],
         outputs[neuron][x][y] = 0.0;
     }
 }
+
+extern "C" __global__ void output_layer(double relu_output[10][20][20],
+                                        double weights[10][4000],
+                                        double outputs[10]) {
+
+    int neuron = blockIdx.x;
+
+    double sum = 0;
+
+    for(int i = 0; i < 10; i++) {
+        for(int j = 0; j < 20; j++) {
+            for(int k = 0; k < 20; k++) {
+                sum = sum + relu_output[i][j][k] * weights[neuron][i * j * k];
+            }
+        }
+    }
+    outputs[neuron] = sum;
+}

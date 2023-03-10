@@ -43,6 +43,7 @@ impl CudaContext {
         // Create buffers for data
         let mut input_box = DeviceBox::new(input)?;
         let mut conv_output_box = DeviceBox::new(&conv_output)?;
+        let mut output_box = DeviceBox::new(&output)?;
 
         unsafe {
             // Launch the kernel with 10 blocks of 20*20 threads, no dynamic shared memory on `stream`.
@@ -64,7 +65,25 @@ impl CudaContext {
 
         self.output_layer.copy_to(&mut weights)?;
 
-        output_layer(&conv_output, weights, &mut output);
+        // output_layer(&conv_output, weights, &mut output);
+
+        unsafe {
+            // Launch the kernel with 10 blocks of 20*20 threads, no dynamic shared memory on `stream`.
+            let module = &self.module;
+            let stream = &self.stream;
+            let result = launch!(module.output_layer<<<10, 1, 0, stream>>>(
+                conv_output_box.as_device_ptr(),
+                self.conv_layer.as_device_ptr(),
+                output_box.as_device_ptr()
+            ));
+            result?;
+        }
+
+        // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
+        self.stream.synchronize()?;
+
+        // Copy the results back to host memory
+        output_box.copy_to(&mut output)?;
 
         Ok(output)
     }
