@@ -36,9 +36,8 @@ impl CudaContext {
     }
 
     pub fn compute(&mut self, input: &InputMatrix) -> Result<OutputVec, Box<dyn Error>> {
-        let mut conv_output = ConvOutput([[[0.0; CONV_OUT_DIM]; CONV_OUT_DIM]; CONV_LAYER_SIZE]);
+        let conv_output = ConvOutput([[[0.0; CONV_OUT_DIM]; CONV_OUT_DIM]; CONV_LAYER_SIZE]);
         let mut output = OutputVec([0.0; OUT_LAYER_SIZE]);
-        let mut weights = OutputLayer([[0.0; OUT_NEURON_DIM]; OUT_LAYER_SIZE]);
 
         // Create buffers for data
         let mut input_box = DeviceBox::new(input)?;
@@ -56,16 +55,6 @@ impl CudaContext {
             ));
             result?;
         }
-
-        // Kernel launches are asynchronous, so we wait for the kernels to finish executing.
-        // self.stream.synchronize()?;
-        //
-        // // Copy the results back to host memory
-        // conv_output_box.copy_to(&mut conv_output)?;
-        //
-        // self.output_layer.copy_to(&mut weights)?;
-
-        // output_layer(&conv_output, weights, &mut output);
 
         unsafe {
             // Launch the kernel with 10 blocks of 1 threads, no dynamic shared memory on `stream`.
@@ -88,14 +77,3 @@ impl CudaContext {
         Ok(output)
     }
 }
-
-// fn output_layer(input: &ConvOutput, weights: OutputLayer, output: &mut OutputVec) {
-//     // Go thru each output neuron
-//     for (weight, out) in weights.0.iter().zip(output.0.iter_mut()) {
-//         // Flatten the output of the previous layer into a 4000x1 vector, then dot product it with
-//         // the weight vector to produce a single value
-//         let flattened = input.0.iter().flat_map(|n| n.iter().flat_map(|r| r.iter()));
-//         let prod: f64 = flattened.zip(weight.iter()).map(|(a, b)| a * b).sum();
-//         *out = prod;
-//     }
-// }
