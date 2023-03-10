@@ -68,7 +68,7 @@ impl CudaContext {
         // output_layer(&conv_output, weights, &mut output);
 
         unsafe {
-            // Launch the kernel with 10 blocks of 20*20 threads, no dynamic shared memory on `stream`.
+            // Launch the kernel with 10 blocks of 1 threads, no dynamic shared memory on `stream`.
             let module = &self.module;
             let stream = &self.stream;
             let result = launch!(module.output_layer<<<10, 1, 0, stream>>>(
